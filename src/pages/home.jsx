@@ -23,8 +23,7 @@ const Dashboard = () => {
       return res.json();
     })
     .then(data => {
-      console.log(data)
-     setTables(data);       // ✅ update state
+     setTables(data);    
     })
     .catch(err => console.error("Fetch error:", err));
 }, []);
@@ -74,7 +73,6 @@ const Dashboard = () => {
   }
 
   setTableNumber(tableName);
-
   if (status === 'occupied') {
     fetch(`${Backend}Order/${table_id}/`) 
       .then(res => {
@@ -82,6 +80,7 @@ const Dashboard = () => {
         return res.json();
       })
       .then(data => {
+        console.log(data)
         const formattedItems = data.Items.map(item => ({
           id: item.OrderItemID,
           name: item.Item.item_name,

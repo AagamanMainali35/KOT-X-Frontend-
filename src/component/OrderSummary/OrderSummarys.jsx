@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShoppingCart, Minus, Plus, Trash2, Tag, Receipt } from 'lucide-react';
 import './OrderSummary.css';
 
+const Backend = import.meta.env.VITE_BACKEND;
 const OrderSummary = ({ 
   orderItems = [], 
   tableNumber = '',
@@ -11,7 +12,7 @@ const OrderSummary = ({
   onSubmitOrder 
 }) => {
   const [discountPercent, setDiscountPercent] = useState(0);
-  const VAT_RATE = 0.13; // 13% VAT
+  const VAT_RATE = 0.13;
 
   const calculateSubtotal = () => {
     return orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -25,6 +26,28 @@ const OrderSummary = ({
     return subtotal * (discountPercent / 100);
   };
 
+  const UpdateItems=(item_id,quantity)=>{
+    console.log(`updating item id ${item_id} to qunatity ${quantity}`)
+    fetch(`${Backend}Order/UpdateItem/${item_id}/`,{
+      method:"PATCH",
+       headers: {
+      "Content-Type": "application/json"
+    },
+      body:JSON.stringify({
+        "quantity":quantity
+      })
+    })
+    .then(res=>{
+      if(!res.ok){ throw new Error(`Invalid response ${res.status}`);
+      }
+      return res.json()
+    })
+    .then(data=>{
+      console.log(data)
+      console.log("from update")
+    })
+  }
+
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
     const vat = calculateVAT(subtotal);
@@ -35,7 +58,9 @@ const OrderSummary = ({
   const handleIncreaseQuantity = (itemId) => {
     const item = orderItems.find(i => i.id === itemId);
     if (item && onUpdateQuantity) {
+       const newQuantity = item.quantity + 1;
       onUpdateQuantity(itemId, item.quantity + 1);
+      UpdateItems(item.id,newQuantity)
     }
     console.log(itemId)
   };
@@ -43,19 +68,15 @@ const OrderSummary = ({
  const handleDecreaseQuantity = (itemId) => {
   const item = orderItems.find(i => i.id === itemId);
   if (!item) return;
-
   if (item.quantity === 1) {
-    console.log(`Item quantity to update: 0 (removing item)`); // new value is 0
     onRemoveItem(itemId); // delete from cart
     //NOTE: call the delete orderItem here
   } else {
     const newQuantity = item.quantity - 1;
-    console.log(`Item quantity to update: ${newQuantity}`);
+    UpdateItems(item.id,newQuantity)
     onUpdateQuantity(itemId, newQuantity); // update item via API
     //NOTE:call the update item here
-  }
-
-  console.log(`Item id to update: ${item.id}`);
+  }  
 };
 
   const handleDiscountChange = (e) => {
