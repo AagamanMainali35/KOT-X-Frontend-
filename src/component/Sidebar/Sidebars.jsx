@@ -1,13 +1,14 @@
 import React from 'react';
-import { Home, Utensils, ShoppingCart, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Home, Settings, Utensils } from 'lucide-react';
 import './Sidebar.css';
 
-const Sidebar = ({ activeView, setActiveView }) => {
+const Sidebar = ({ activeView }) => {
+  const navigate = useNavigate();
+
   const menuItems = [
-    { id: 'home', label: 'Dashboard', icon: Home },
-    { id: 'menu', label: 'Menu', icon: Utensils },
-    { id: 'orders', label: 'Orders', icon: ShoppingCart },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    { id: 'home', label: 'Dashboard', icon: Home, path: '/' },
+    { id: 'test', label: 'Menu', icon: Utensils, path: '/test' },
   ];
 
   return (
@@ -16,13 +17,14 @@ const Sidebar = ({ activeView, setActiveView }) => {
         <Utensils size={32} color="#3b82f6" />
         <h2 className="sidebar-title">KOT System</h2>
       </div>
+
       <nav className="nav">
         {menuItems.map(item => {
           const Icon = item.icon;
           return (
             <button
               key={item.id}
-              onClick={() => setActiveView(item.id)}
+              onClick={() => navigate(item.path)}
               className={`nav-item ${activeView === item.id ? 'active' : ''}`}
             >
               <Icon size={20} />

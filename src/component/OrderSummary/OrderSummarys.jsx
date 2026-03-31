@@ -1,83 +1,49 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Minus, Plus, Trash2, Tag, Receipt } from 'lucide-react';
+import { useOrder } from '../../context/OrderContext'; // <--- import context
 import './OrderSummary.css';
 
 const Backend = import.meta.env.VITE_BACKEND;
-const OrderSummary = ({ 
-  orderItems = [], 
-  tableNumber = '',
-  onUpdateQuantity,
-  onRemoveItem,
-  onClearOrder,
-  onSubmitOrder 
-}) => {
+
+const OrderSummary = () => {
+  const { orderItems, tableNumber, updateQuantity, removeItem, clearOrder } = useOrder(); // <--- context
   const [discountPercent, setDiscountPercent] = useState(0);
   const VAT_RATE = 0.13;
 
-  const calculateSubtotal = () => {
-    return orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  };
+  const calculateSubtotal = () => orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const calculateVAT = (subtotal) => subtotal * VAT_RATE;
+  const calculateDiscount = (subtotal) => subtotal * (discountPercent / 100);
 
-  const calculateVAT = (subtotal) => {
-    return subtotal * VAT_RATE;
-  };
-
-  const calculateDiscount = (subtotal) => {
-    return subtotal * (discountPercent / 100);
-  };
-
-  const UpdateItems=(item_id,quantity)=>{
-    console.log(`updating item id ${item_id} to qunatity ${quantity}`)
-    fetch(`${Backend}Order/UpdateItem/${item_id}/`,{
-      method:"PATCH",
-       headers: {
-      "Content-Type": "application/json"
-    },
-      body:JSON.stringify({
-        "quantity":quantity
-      })
+  const UpdateItems = (item_id, quantity) => {
+    fetch(`${Backend}Order/UpdateItem/${item_id}/`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ "quantity": quantity })
     })
-    .then(res=>{
-      if(!res.ok){ throw new Error(`Invalid response ${res.status}`);
-      }
-      return res.json()
-    })
-    .then(data=>{
-      console.log(data)
-      console.log("from update")
-    })
-  }
-
-  const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const vat = calculateVAT(subtotal);
-    const discount = calculateDiscount(subtotal);
-    return subtotal + vat - discount;
+      .then(res => { if (!res.ok) throw new Error(`Invalid response ${res.status}`); return res.json() })
+      .then(data => console.log(data, "from update"));
   };
 
   const handleIncreaseQuantity = (itemId) => {
     const item = orderItems.find(i => i.id === itemId);
-    if (item && onUpdateQuantity) {
-       const newQuantity = item.quantity + 1;
-      onUpdateQuantity(itemId, item.quantity + 1);
-      UpdateItems(item.id,newQuantity)
+    if (item) {
+      const newQuantity = item.quantity + 1;
+      updateQuantity(itemId, newQuantity);
+      UpdateItems(itemId, newQuantity);
     }
-    console.log(itemId)
   };
 
- const handleDecreaseQuantity = (itemId) => {
-  const item = orderItems.find(i => i.id === itemId);
-  if (!item) return;
-  if (item.quantity === 1) {
-    onRemoveItem(itemId); // delete from cart
-    //NOTE: call the delete orderItem here
-  } else {
-    const newQuantity = item.quantity - 1;
-    UpdateItems(item.id,newQuantity)
-    onUpdateQuantity(itemId, newQuantity); // update item via API
-    //NOTE:call the update item here
-  }  
-};
+  const handleDecreaseQuantity = (itemId) => {
+    const item = orderItems.find(i => i.id === itemId);
+    if (!item) return;
+    if (item.quantity === 1) {
+      removeItem(itemId);
+    } else {
+      const newQuantity = item.quantity - 1;
+      updateQuantity(itemId, newQuantity);
+      UpdateItems(itemId, newQuantity);
+    }
+  };
 
   const handleDiscountChange = (e) => {
     const value = Math.max(0, Math.min(100, Number(e.target.value)));
@@ -87,7 +53,7 @@ const OrderSummary = ({
   const subtotal = calculateSubtotal();
   const vat = calculateVAT(subtotal);
   const discount = calculateDiscount(subtotal);
-  const total = calculateTotal();
+  const total = subtotal + vat - discount;
 
   if (orderItems.length === 0) {
     return (
@@ -105,9 +71,7 @@ const OrderSummary = ({
     <div className="order-summary">
       <div className="order-header">
         <h3 className="section-title">Order Summary</h3>
-        {tableNumber && (
-          <span className="table-tag">Table {tableNumber}</span>
-        )}
+        {tableNumber && <span className="table-tag">Table {tableNumber.table_name}</span>}
       </div>
 
       <div className="order-items">
@@ -118,26 +82,14 @@ const OrderSummary = ({
               <p className="order-item-price">${item.price.toFixed(2)}</p>
             </div>
             <div className="order-item-actions">
-              <button
-                onClick={() => handleDecreaseQuantity(item.id)}
-                className="quantity-button"
-                title="Decrease quantity"
-              >
+              <button onClick={() => handleDecreaseQuantity(item.id)} className="quantity-button" title="Decrease quantity">
                 <Minus size={14} />
               </button>
               <span className="quantity">{item.quantity}</span>
-              <button
-                onClick={() => handleIncreaseQuantity(item.id)}
-                className="quantity-button"
-                title="Increase quantity"
-              >
+              <button onClick={() => handleIncreaseQuantity(item.id)} className="quantity-button" title="Increase quantity">
                 <Plus size={14} />
               </button>
-              <button
-                onClick={() => onRemoveItem && onRemoveItem(item.id)}
-                className="delete-button"
-                title="Remove item"
-              >
+              <button onClick={() => removeItem(item.id)} className="delete-button" title="Remove item">
                 <Trash2 size={16} />
               </button>
             </div>
@@ -145,7 +97,6 @@ const OrderSummary = ({
         ))}
       </div>
 
-      {/* Discount Section */}
       <div className="discount-section">
         <label className="discount-label">
           <Tag size={16} />
@@ -162,7 +113,6 @@ const OrderSummary = ({
         />
       </div>
 
-      {/* Billing Summary */}
       <div className="billing-summary">
         <div className="billing-row">
           <span>Subtotal:</span>
@@ -184,20 +134,11 @@ const OrderSummary = ({
         </div>
       </div>
 
-      {/* Order Actions */}
       <div className="order-actions">
-        <button 
-          onClick={onClearOrder} 
-          className="clear-button"
-          title="Clear all items"
-        >
+        <button onClick={clearOrder} className="clear-button" title="Clear all items">
           Clear Order
         </button>
-        <button 
-          onClick={onSubmitOrder} 
-          className="submit-button"
-          title="Submit order to kitchen"
-        >
+        <button onClick={() => alert(`Order submitted for ${tableNumber.table_name}`)} className="submit-button" title="Submit order to kitchen">
           <Receipt size={18} />
           Submit Order
         </button>
