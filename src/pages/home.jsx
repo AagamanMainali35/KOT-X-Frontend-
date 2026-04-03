@@ -59,7 +59,7 @@ const Dashboard = () => {
         clearOrder();
         console.error(err);
       } finally {
-        setTimeout(() => setOrderLoading(false), 350); // minimum 350ms
+        setTimeout(() => setOrderLoading(false), 350); 
       }
     } else {
       clearOrder();

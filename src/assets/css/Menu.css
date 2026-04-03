@@ -693,6 +693,40 @@
   color: var(--ink-300);
 }
 
+/* Error Toast Styles */
+.error-toast-global {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #ef4444;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.error-toast-global span {
+  flex: 1;
+}
+
 /* ══════════════════════════════════════════════════════════
    ITEM LIST
    ══════════════════════════════════════════════════════════ */

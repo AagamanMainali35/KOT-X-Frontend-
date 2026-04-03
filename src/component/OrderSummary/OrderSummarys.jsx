@@ -6,21 +6,16 @@ import './OrderSummary.css';
 const Backend = import.meta.env.VITE_BACKEND;
 
 const OrderSummary = ({ tableNumber, loading }) => {
-  const { orderItems, updateQuantity, removeItem, clearOrder, orderId } = useOrder();
+  const { orderItems, setOrderItems, removeItem, clearOrder, orderId } = useOrder();
   const [discountPercent, setDiscountPercent] = useState(0);
   const VAT_RATE = 0.13;
-
-  useEffect(() => {
-    console.log("Order ID:", orderId);
-    console.log("Order Items:", orderItems);
-  }, [orderItems, orderId]);
 
   const calculateSubtotal = () =>
     orderItems.reduce((sum, item) => sum + (item.Item.price * item.quantity), 0);
 
   const calculateVAT = (subtotal) => subtotal * VAT_RATE;
   const calculateDiscount = (subtotal) => subtotal * (discountPercent / 100);
-
+  
   const UpdateItems = (orderItemId, quantity) => {
     fetch(`${Backend}Order/UpdateItem/${orderItemId}/`, {
       method: "PATCH",
@@ -31,23 +26,66 @@ const OrderSummary = ({ tableNumber, loading }) => {
         if (!res.ok) throw new Error(`Invalid response ${res.status}`);
         return res.json();
       })
-      .then(data => console.log(data, "from update"));
+      .then(data => {
+        console.log(data, "from update");
+        // Update local state with fresh data from response
+        if (data.Items) {
+          setOrderItems(data.Items);
+        }
+      })
+      .catch(err => console.error("Update failed:", err));
   };
 
   const handleIncreaseQuantity = (item) => {
     const newQuantity = item.quantity + 1;
-    updateQuantity(item.OrderItemID, item.Item.item_id, newQuantity);
+    // Update local state immediately for responsive UI
+    const updatedItems = orderItems.map(i =>
+      i.OrderItemID === item.OrderItemID 
+        ? { ...i, quantity: newQuantity }
+        : i
+    );
+    setOrderItems(updatedItems);
+    // Then sync with backend
     UpdateItems(item.OrderItemID, newQuantity);
   };
 
   const handleDecreaseQuantity = (item) => {
     if (item.quantity === 1) {
-      removeItem(item.Item.item_id);
+      // Remove from local state
+      const updatedItems = orderItems.filter(i => i.OrderItemID !== item.OrderItemID);
+      setOrderItems(updatedItems);
+      // Then sync with backend (delete endpoint)
+      DeleteOrderItem(item.OrderItemID);
     } else {
       const newQuantity = item.quantity - 1;
-      updateQuantity(item.OrderItemID, item.Item.item_id, newQuantity);
+      // Update local state immediately
+      const updatedItems = orderItems.map(i =>
+        i.OrderItemID === item.OrderItemID 
+          ? { ...i, quantity: newQuantity }
+          : i
+      );
+      setOrderItems(updatedItems);
+      // Then sync with backend
       UpdateItems(item.OrderItemID, newQuantity);
     }
+  };
+
+  const DeleteOrderItem = (orderItemId) => {
+    fetch(`${Backend}Order/DeleteItem/${orderItemId}/`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`Invalid response ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log(data, "from delete");
+        if (data.Items) {
+          setOrderItems(data.Items);
+        }
+      })
+      .catch(err => console.error("Delete failed:", err));
   };
 
   const handleDiscountChange = (e) => {
@@ -115,7 +153,7 @@ const OrderSummary = ({ tableNumber, loading }) => {
                 <Plus size={14} />
               </button>
 
-              <button onClick={() => removeItem(item.Item.item_id)} className="delete-button">
+              <button onClick={() => DeleteOrderItem(item.OrderItemID)} className="delete-button">
                 <Trash2 size={16} />
               </button>
             </div>
