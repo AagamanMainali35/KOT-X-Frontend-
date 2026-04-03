@@ -17,7 +17,7 @@ export const AutoFetchProvider = ({ children }) => {
       axios.get(BACKEND_URL)
         .then(res => {
           setData(res.data);
-          setError(null);
+          setError(null);   
           setLoading(false);
         })
         .catch(err => {

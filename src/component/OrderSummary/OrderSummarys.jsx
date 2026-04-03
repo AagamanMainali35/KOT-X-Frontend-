@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Minus, Plus, Trash2, Tag, Receipt } from 'lucide-react';
-import { useOrder } from '../../context/OrderContext'; // <--- import context
+import { useOrder } from '../../context/OrderItemContext'; // <--- import context
 import './OrderSummary.css';
 
 const Backend = import.meta.env.VITE_BACKEND;
