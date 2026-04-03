@@ -2,13 +2,15 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { TablesProvider } from './context/TablesContext';
-import { OrderProvider } from "./context/OrderContext";
+import { OrderProvider } from "./context/OrderItemContext.jsx";
 import { AutoFetchProvider   } from "./context/AutoFetchContext";
+import  { MenuProvider } from "./context/MenuContext.jsx"
 import App from './App.jsx';
 
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+  // <StrictMode>
+    <MenuProvider>
     <TablesProvider>
     <OrderProvider>
       <AutoFetchProvider>
@@ -16,5 +18,6 @@ createRoot(document.getElementById('root')).render(
       </AutoFetchProvider>
     </OrderProvider>
     </TablesProvider>
-  </StrictMode>,
+    </MenuProvider>
+  // </StrictMode>,
 )
