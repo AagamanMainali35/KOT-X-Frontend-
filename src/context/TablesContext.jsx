@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import axios from "axios";
 
 const TablesContext = createContext();
 
@@ -11,46 +12,86 @@ export const useTables = () => {
 };
 
 export const TablesProvider = ({ children }) => {
+    const Backend = import.meta.env.VITE_BACKEND;
+
   const [tables, setTables] = useState(null);
   const [selectedTable, setSelectedTable] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
+  const fetchTables = (force = false) => {
+    if (!force && tables !== null) return;
+
+    setLoading(true);
+    setError(false);
+
+    const startTime = Date.now();
+
+    axios
+      .get(`${Backend}Tables/all/`)
+      .then((res) => {
+        setTables(res.data);
+      })
+      .catch(() => {
+        setTables([]);
+        setError(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchTables();
+  }, []);
+
+  // ➕ Add table (placeholder)
   const addTable = (tableData) => {
-    //NOTE: add create tbale api call here
-    // setTables([...tables, newTable]);  NOTE: Add api data here
+    // TODO: API call
   };
 
+  // ❌ Remove table
   const removeTable = (tableId) => {
-    setTables(tables.filter((t) => t.id !== tableId));
-    if (selectedTable?.id === tableId) setSelectedTable(null); // deselect if removed
-    //NOTE: call the delete table API
+    setTables((prev) => prev?.filter((t) => t.id !== tableId) || []);
+    if (selectedTable?.id === tableId) setSelectedTable(null);
+    // TODO: API call
   };
 
+  // ✏️ Update table
   const updateTable = (tableId, updates) => {
     setTables((prev) =>
-      prev.map((t) => (t.id === tableId ? { ...t, ...updates } : t)),
+      prev?.map((t) =>
+        t.id === tableId ? { ...t, ...updates } : t
+      ) || []
     );
-    //NOTE: call the update Table API
+    // TODO: API call
   };
 
-  const getTableById = (tableId) => tables.find((t) => t.id === tableId);
+  // 🔍 Helpers
+  const getTableById = (tableId) =>
+    tables?.find((t) => t.id === tableId);
 
   const getAvailableTables = () =>
-    tables.filter((t) => t.status === "available");
+    tables?.filter((t) => t.status === "available") || [];
 
-  const getOccupiedTables = () => tables.filter((t) => t.status === "occupied");
+  const getOccupiedTables = () =>
+    tables?.filter((t) => t.status === "occupied") || [];
 
   return (
     <TablesContext.Provider
       value={{
         tables,
+        loading,
+        error,
+        fetchTables, // 👈 use this to refetch (e.g., after API sleep)
         addTable,
         removeTable,
         updateTable,
         getTableById,
         getAvailableTables,
         getOccupiedTables,
-        selectedTable, // <-- expose selected table
-        setSelectedTable, // <-- expose setter
+        selectedTable,
+        setSelectedTable,
       }}
     >
       {children}
