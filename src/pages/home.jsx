@@ -18,26 +18,24 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const Backend = import.meta.env.VITE_BACKEND;
 
-  const {
-    tables,
-    loading,
-    error,
-    selectedTable,
-    setSelectedTable,
-    fetchTables,
-  } = useTables();
+  const { tables, loading, error, selectedTable, setSelectedTable } =
+    useTables();
+
   const {
     orderItems,
+    orderId,
+    setOrderItems,
+    setOrderId,
     addItem,
     updateQuantity,
     removeItem,
     clearOrder,
-    setOrderItems,
   } = useOrder();
 
   const [activeView, setActiveView] = useState("home");
   const [orderLoading, setOrderLoading] = useState(false);
 
+  // handle table selection & fetch order if occupied
   const handleSelectTable = async (table) => {
     if (selectedTable?.id === table.id) {
       clearOrder();
@@ -55,30 +53,13 @@ const Dashboard = () => {
         if (!res.ok) throw new Error();
 
         const data = await res.json();
-        console.log(data)
-
-        const formatted = data.Items.map((item) => ({
-          id: item.Item.item_id,
-          name: item.Item.item_name,
-          price: item.Item.price,
-          quantity: item.quantity,
-          image: item.Item.image,
-          special_note: item.special_note,
-        }));
-
-        clearOrder();
-
-        if (setOrderItems) {
-          setOrderItems(formatted);
-        } else {
-          formatted.forEach((item) => addItem(item));
-        }
+        setOrderItems(data.Items); // store raw Items array
+        setOrderId(data.id); // store orderId
       } catch (err) {
         clearOrder();
+        console.error(err);
       } finally {
-        setTimeout(() => {
-          setOrderLoading(false);
-        }, 100); 
+        setTimeout(() => setOrderLoading(false), 350); // minimum 350ms
       }
     } else {
       clearOrder();
@@ -100,7 +81,10 @@ const Dashboard = () => {
     status.charAt(0).toUpperCase() + status.slice(1);
 
   const calculateTotal = () => {
-    const subtotal = orderItems.reduce((s, i) => s + i.price * i.quantity, 0);
+    const subtotal = orderItems.reduce(
+      (s, i) => s + i.Item.price * i.quantity,
+      0
+    );
     return subtotal + subtotal * 0.13;
   };
 
@@ -156,15 +140,16 @@ const Dashboard = () => {
             })}
           </div>
 
+          {/* Tables + Order */}
           <div className={`dashboard-grid ${!selectedTable ? "no-order" : ""}`}>
-            {/* Tables Section */}
+            {/* Table selection */}
             {loading ? (
               <div className="table-selection-container">
                 <div className="tables-grid">
                   {Array(8)
                     .fill(0)
                     .map((_, i) => (
-                      <div key={i} className="table-card skeleton"></div>
+                      <div key={i} className="table-card skeleton" />
                     ))}
                 </div>
               </div>
@@ -205,14 +190,14 @@ const Dashboard = () => {
                     <button
                       key={table.id}
                       onClick={() => handleSelectTable(table)}
-                      className={`table-card ${selectedTable?.id === table.id ? "selected" : ""} ${table.status}`}
+                      className={`table-card ${
+                        selectedTable?.id === table.id ? "selected" : ""
+                      } ${table.status}`}
                     >
                       <div className="table-card-header">
                         <div
                           className="status-dot"
-                          style={{
-                            backgroundColor: getStatusColor(table.status),
-                          }}
+                          style={{ backgroundColor: getStatusColor(table.status) }}
                         />
                         <span className="status-label">
                           {getStatusLabel(table.status)}
@@ -233,46 +218,20 @@ const Dashboard = () => {
                     </button>
                   ))}
                 </div>
-
-                {selectedTable && (
-                  <div className="selected-table-info">
-                    <p>
-                      ✓ Currently selected:{" "}
-                      <strong>{selectedTable.table_name}</strong>
-                    </p>
-                  </div>
-                )}
               </div>
             )}
 
-            {/* Order Section */}
-            {selectedTable &&
-              (orderLoading ? (
-                <div className="order-skeleton">
-                  {Array(5)
-                    .fill(0)
-                    .map((_, i) => (
-                      <div key={i} className="skeleton-row">
-                        <div className="skeleton-left">
-                          <div className="skeleton-name" />
-                          <div className="skeleton-qty" />
-                        </div>
-                        <div className="skeleton-price" />
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <OrderSummary
-                  orderItems={orderItems}
-                  tableNumber={selectedTable.table_name}
-                  onUpdateQuantity={updateQuantity}
-                  onRemoveItem={removeItem}
-                  onClearOrder={clearOrder}
-                  onSubmitOrder={() =>
-                    alert(`Order submitted for ${selectedTable.table_name}`)
-                  }
-                />
-              ))}
+            {/* Order summary */}
+            {selectedTable && (
+              <OrderSummary
+                orderItems={orderItems}
+                tableNumber={selectedTable.table_name}
+                onUpdateQuantity={updateQuantity}
+                onRemoveItem={removeItem}
+                onClearOrder={clearOrder}
+                loading={orderLoading} // ✅ pass loading here
+              />
+            )}
           </div>
         </div>
       </main>

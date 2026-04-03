@@ -1,47 +1,52 @@
-import React, { useState } from 'react';
-import { ShoppingCart, Minus, Plus, Trash2, Tag, Receipt } from 'lucide-react';
-import { useOrder } from '../../context/OrderItemContext'; // <--- import context
+import React, { useEffect, useState } from 'react';
+import { ShoppingCart, Minus, Plus, Trash2, Tag, Receipt, HandPlatter } from 'lucide-react';
+import { useOrder } from '../../context/OrderItemContext'; 
 import './OrderSummary.css';
 
 const Backend = import.meta.env.VITE_BACKEND;
 
-const OrderSummary = () => {
-  const { orderItems, tableNumber, updateQuantity, removeItem, clearOrder } = useOrder(); // <--- context
+const OrderSummary = ({ tableNumber, loading }) => {
+  const { orderItems, updateQuantity, removeItem, clearOrder, orderId } = useOrder();
   const [discountPercent, setDiscountPercent] = useState(0);
   const VAT_RATE = 0.13;
 
-  const calculateSubtotal = () => orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  useEffect(() => {
+    console.log("Order ID:", orderId);
+    console.log("Order Items:", orderItems);
+  }, [orderItems, orderId]);
+
+  const calculateSubtotal = () =>
+    orderItems.reduce((sum, item) => sum + (item.Item.price * item.quantity), 0);
+
   const calculateVAT = (subtotal) => subtotal * VAT_RATE;
   const calculateDiscount = (subtotal) => subtotal * (discountPercent / 100);
 
-  const UpdateItems = (item_id, quantity) => {
-    fetch(`${Backend}Order/UpdateItem/${item_id}/`, {
+  const UpdateItems = (orderItemId, quantity) => {
+    fetch(`${Backend}Order/UpdateItem/${orderItemId}/`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ "quantity": quantity })
+      body: JSON.stringify({ quantity })
     })
-      .then(res => { if (!res.ok) throw new Error(`Invalid response ${res.status}`); return res.json() })
+      .then(res => {
+        if (!res.ok) throw new Error(`Invalid response ${res.status}`);
+        return res.json();
+      })
       .then(data => console.log(data, "from update"));
   };
 
-  const handleIncreaseQuantity = (itemId) => {
-    const item = orderItems.find(i => i.id === itemId);
-    if (item) {
-      const newQuantity = item.quantity + 1;
-      updateQuantity(itemId, newQuantity);
-      UpdateItems(itemId, newQuantity);
-    }
+  const handleIncreaseQuantity = (item) => {
+    const newQuantity = item.quantity + 1;
+    updateQuantity(item.OrderItemID, item.Item.item_id, newQuantity);
+    UpdateItems(item.OrderItemID, newQuantity);
   };
 
-  const handleDecreaseQuantity = (itemId) => {
-    const item = orderItems.find(i => i.id === itemId);
-    if (!item) return;
+  const handleDecreaseQuantity = (item) => {
     if (item.quantity === 1) {
-      removeItem(itemId);
+      removeItem(item.Item.item_id);
     } else {
       const newQuantity = item.quantity - 1;
-      updateQuantity(itemId, newQuantity);
-      UpdateItems(itemId, newQuantity);
+      updateQuantity(item.OrderItemID, item.Item.item_id, newQuantity);
+      UpdateItems(item.OrderItemID, newQuantity);
     }
   };
 
@@ -54,6 +59,23 @@ const OrderSummary = () => {
   const vat = calculateVAT(subtotal);
   const discount = calculateDiscount(subtotal);
   const total = subtotal + vat - discount;
+
+  // Show loading skeleton inside order-summary
+  if (loading) {
+    return (
+      <div className="order-summary">
+        {Array(4).fill(0).map((_, i) => (
+          <div key={i} className="skeleton-row">
+            <div className="skeleton-left">
+              <div className="skeleton-name" />
+              <div className="skeleton-qty" />
+            </div>
+            <div className="skeleton-price" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (orderItems.length === 0) {
     return (
@@ -71,25 +93,29 @@ const OrderSummary = () => {
     <div className="order-summary">
       <div className="order-header">
         <h3 className="section-title">Order Summary</h3>
-        {tableNumber && <span className="table-tag">Table {tableNumber.table_name}</span>}
+        {tableNumber && <span className="table-tag">Table {tableNumber}</span>}
       </div>
 
       <div className="order-items">
         {orderItems.map(item => (
-          <div key={item.id} className="order-item">
+          <div key={item.OrderItemID} className="order-item">
             <div className="order-item-info">
-              <h4 className="order-item-name">{item.name}</h4>
-              <p className="order-item-price">${item.price.toFixed(2)}</p>
+              <h4 className="order-item-name">{item.Item.item_name}</h4>
+              <p className="order-item-price">${item.Item.price.toFixed(2)}</p>
             </div>
+
             <div className="order-item-actions">
-              <button onClick={() => handleDecreaseQuantity(item.id)} className="quantity-button" title="Decrease quantity">
+              <button onClick={() => handleDecreaseQuantity(item)} className="quantity-button">
                 <Minus size={14} />
               </button>
+
               <span className="quantity">{item.quantity}</span>
-              <button onClick={() => handleIncreaseQuantity(item.id)} className="quantity-button" title="Increase quantity">
+
+              <button onClick={() => handleIncreaseQuantity(item)} className="quantity-button">
                 <Plus size={14} />
               </button>
-              <button onClick={() => removeItem(item.id)} className="delete-button" title="Remove item">
+
+              <button onClick={() => removeItem(item.Item.item_id)} className="delete-button">
                 <Trash2 size={16} />
               </button>
             </div>
@@ -99,8 +125,7 @@ const OrderSummary = () => {
 
       <div className="discount-section">
         <label className="discount-label">
-          <Tag size={16} />
-          Discount (%)
+          <Tag size={16} /> Discount (%)
         </label>
         <input
           type="number"
@@ -109,7 +134,6 @@ const OrderSummary = () => {
           value={discountPercent}
           onChange={handleDiscountChange}
           className="discount-input"
-          placeholder="0"
         />
       </div>
 
@@ -118,16 +142,19 @@ const OrderSummary = () => {
           <span>Subtotal:</span>
           <span>${subtotal.toFixed(2)}</span>
         </div>
+
         <div className="billing-row">
           <span>VAT ({(VAT_RATE * 100).toFixed(0)}%):</span>
           <span>${vat.toFixed(2)}</span>
         </div>
+
         {discount > 0 && (
           <div className="billing-row discount-row">
             <span>Discount ({discountPercent}%):</span>
             <span>-${discount.toFixed(2)}</span>
           </div>
         )}
+
         <div className="total-row">
           <span>Total:</span>
           <span>${total.toFixed(2)}</span>
@@ -135,12 +162,9 @@ const OrderSummary = () => {
       </div>
 
       <div className="order-actions">
-        <button onClick={clearOrder} className="clear-button" title="Clear all items">
-          Clear Order
-        </button>
-        <button onClick={() => alert(`Order submitted for ${tableNumber.table_name}`)} className="submit-button" title="Submit order to kitchen">
-          <Receipt size={18} />
-          Submit Order
+        <button onClick={clearOrder} className="clear-button">Clear Order</button>
+        <button onClick={() => alert(`Order submitted for ${tableNumber}`)} className="submit-button">
+          <Receipt size={18} /> Submit Order
         </button>
       </div>
     </div>

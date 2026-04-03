@@ -1,75 +1,85 @@
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 import { useTables } from "./TablesContext";
 
 const OrderContext = createContext();
 export const useOrder = () => useContext(OrderContext);
+
 export const OrderProvider = ({ children }) => {
   const [orderItems, setOrderItems] = useState([]);
+  const [orderId, setOrderId] = useState(null);
+  const [loading, setLoading] = useState(true); // loading state
   const { selectedTable } = useTables();
-  const Backend=import.meta.env.VITE_BACKEND
+  const Backend = import.meta.env.VITE_BACKEND;
+
+  // Simulate initial loading for minimum 350ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const addItem = (item) => {
     setOrderItems((prevItems) => {
-      const existingItem = prevItems.find((i) => i.id === item.id);
+      const existingItem = prevItems.find(
+        (i) => i.Item.item_id === item.Item.item_id
+      );
 
-      // Step 2: If it exists, increase its quantity
       if (existingItem) {
-        const updatedItems = prevItems.map((i) => {
-          if (i.id === item.id) {
-            return {
-              ...i, // keep the other properties
-              quantity: i.quantity + item.quantity, // increase quantity
-            };
-          }
-          return i; // leave other items unchanged
-        });
-        return updatedItems;
+        return prevItems.map((i) =>
+          i.Item.item_id === item.Item.item_id
+            ? { ...i, quantity: i.quantity + item.quantity }
+            : i
+        );
       }
 
-      // Step 3: If it doesn't exist, just add it to the list
       return [...prevItems, item];
     });
   };
 
- const updateQuantity = (Order_id,itemId, newQuantity) => {
-  const payload={
-    "Items":[
-      {
-          "OrderItemID": Order_id, 
-          "order_items":itemId,
-          "quantity": newQuantity,
-      }
-    ]
-  }
-  axios.patch(`${Backend}Order/update/${Order_id}/`, payload)
-  .then(res=>{
-    console.log(res.data)
-  })
-  .catch(err=>{
-    console.log(err)
-  })
-};
-
-
-  const removeItem = (itemId) => {
+  const updateQuantity = (OrderItemID, itemId, newQuantity) => {
     setOrderItems((prevItems) =>
-      prevItems.filter((item) => item.id !== itemId)
+      prevItems.map((i) =>
+        i.Item.item_id === itemId ? { ...i, quantity: newQuantity } : i
+      )
     );
   };
 
+  const removeItem = (itemId) => {
+    setOrderItems((prevItems) =>
+      prevItems.filter((i) => i.Item.item_id !== itemId)
+    );
+  };
 
-  const clearOrder = () => setOrderItems([]);
+  const clearOrder = () => {
+    setOrderItems([]);
+    setOrderId(null);
+  };
 
+  if (loading) {
+    return (
+      <div style={{ padding: "1rem" }}>
+        {/* Skeleton Loader */}
+        <div style={{ background: "#e0e0e0", height: "20px", marginBottom: "10px", borderRadius: "4px" }}></div>
+        <div style={{ background: "#e0e0e0", height: "20px", marginBottom: "10px", borderRadius: "4px" }}></div>
+        <div style={{ background: "#e0e0e0", height: "20px", marginBottom: "10px", borderRadius: "4px" }}></div>
+      </div>
+    );
+  }
 
   return (
     <OrderContext.Provider
       value={{
         orderItems,
+        orderId,
         selectedTable,
         addItem,
         updateQuantity,
         removeItem,
         clearOrder,
+        setOrderItems,
+        setOrderId,
       }}
     >
       {children}
