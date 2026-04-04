@@ -89,8 +89,6 @@ export const OrderProvider = ({ children }) => {
     axios.patch(`${Backend}Order/update/${orderId}/`, body)
       .then(res => {
         console.log("Update successful:", res.data);
-        
-        // Check if this response is still the latest request
         const latestRequestId = pendingRequests.current.get(orderItemId);
         if (latestRequestId === requestId) {
           if (res.data.Items) {
@@ -126,9 +124,7 @@ export const OrderProvider = ({ children }) => {
     );
 
     // Make API call
-    axios.delete(`${Backend}Order/delete/${orderId}/`, {
-      data: { OrderItemID: orderItemId }
-    })
+    axios.delete(`${Backend}Order/deleteItem/${orderItemId}/`)
       .then(res => {
         console.log("Remove successful:", res.data);
         if (res.data.Items) {
