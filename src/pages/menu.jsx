@@ -10,13 +10,14 @@ import { useTables } from "../context/TablesContext";
 import { useOrder } from "../context/OrderItemContext";
 import { useMenu } from "../context/MenuContext";
 
-const CATEGORIES = ["All", "Appetizer", "Main Course", "Sides", "Desserts", "Beverage"];
+const CATEGORIES = ["All", "Appetizer", "Main Course", "Side", "Dessert", "Beverage"];
 const CAT_META = {
   All:           { icon: <UtensilsCrossed size={16} />, color: "#2563eb" },
   Appetizer:     { icon: <Salad size={16} />,           color: "#f59e0b" },
   "Main Course": { icon: <Beef size={16} />,            color: "#ef4444" },
-  Sides:         { icon: <Soup size={16} />,            color: "#22c55e" },
-  Desserts:      { icon: <CakeSlice size={16} />,       color: "#ec4899" },
+  Side:         { icon: <Soup size={16} />,            color: "#22c55e" },
+  Dessert:      { icon: <CakeSlice size={16} />,       color: "#ec4899" },
+  Beverage:      { icon: <Coffee size={16} />,          color: "#8b5cf6" },
   Beverage:      { icon: <Coffee size={16} />,          color: "#8b5cf6" },
 };
 
@@ -436,19 +437,6 @@ export default function Menu() {
                                   </button>
                                 </div>
                               ))}
-                            </div>
-
-                            <div className="cart-pop-footer">
-                              <div className="cart-pop-total">
-                                <span className="cart-pop-total-label">Total</span>
-                                <span className="cart-pop-amount">
-                                  ₹{cartTotal.toLocaleString("en-IN")}
-                                </span>
-                              </div>
-                              <button className="cart-pop-order-btn">
-                                <Receipt size={14} />
-                                Place Order
-                              </button>
                             </div>
                           </>
                         )}
