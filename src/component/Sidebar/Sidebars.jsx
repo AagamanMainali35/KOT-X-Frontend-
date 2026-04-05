@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Utensils, Users, UserCircle, Shield, Table2, UtensilsCrossed, LogOut } from 'lucide-react';
+import { Home, Settings, Utensils, Users, UserCircle, Shield, Table2, UtensilsCrossed, LogOut , Receipt  } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = ({ activeView, userRole }) => {
@@ -10,12 +10,13 @@ const Sidebar = ({ activeView, userRole }) => {
   const userMenuItems = [
     { id: 'home', label: 'Dashboard', icon: Home, path: '/' },
     { id: 'Order', label: 'Menu', icon: Utensils, path: '/Order' },
+    { id: 'Billing', label: 'Billing', icon: Receipt, path: '/Billing' },
   ];
 
   // Admin section menu items
   const adminMenuItems = [
     { id: 'admin', label: 'Admin ', icon: Shield, path: '/admin' },
-    { id: 'users', label: 'Manage Users', icon: Users, path: '/users' },
+    { id: 'users', label: 'Manage Users', icon: Users, path: '/Billing' },
     { id: 'admin-tables', label: 'Table Management', icon: Table2, path: '/admin/tables' },
     { id: 'admin-menu', label: 'Menu Management', icon: UtensilsCrossed, path: '/admin/menu' },
     { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },

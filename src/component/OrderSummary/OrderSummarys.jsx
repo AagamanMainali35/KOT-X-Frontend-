@@ -161,20 +161,6 @@ const OrderSummary = ({ tableNumber, loading }) => {
         ))}
       </div>
 
-      <div className="discount-section">
-        <label className="discount-label">
-          <Tag size={16} /> Discount (%)
-        </label>
-        <input
-          type="number"
-          min="0"
-          max="100"
-          value={discountPercent}
-          onChange={handleDiscountChange}
-          className="discount-input"
-        />
-      </div>
-
       <div className="billing-summary">
         <div className="billing-row">
           <span>Subtotal:</span>
@@ -200,7 +186,7 @@ const OrderSummary = ({ tableNumber, loading }) => {
       </div>
 
       <div className="order-actions">
-        <button onClick={clearOrder} className="clear-button">Clear Order</button>
+        {/* <button onClick={clearOrder} className="clear-button">Clear Order</button> */}
         <button onClick={() => alert(`Order submitted for ${tableNumber}`)} className="submit-button">
           <Receipt size={18} /> Submit Order
         </button>

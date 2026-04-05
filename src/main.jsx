@@ -9,7 +9,7 @@ import App from './App.jsx';
 
 
 createRoot(document.getElementById('root')).render(
-  // <StrictMode>
+  <StrictMode>
     <MenuProvider>
     <TablesProvider>
     <OrderProvider>
@@ -19,5 +19,5 @@ createRoot(document.getElementById('root')).render(
     </OrderProvider>
     </TablesProvider>
     </MenuProvider>
-  // </StrictMode>,
+  </StrictMode>,
 )
